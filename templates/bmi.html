@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>BMI Calculator</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: linear-gradient(to right, #74ebd5, #acb6e5);
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+            padding-top: 40px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+            padding: 30px;
+            width: 90%;
+            max-width: 400px;
+            text-align: center;
+            animation: fadeIn 1s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+            from {opacity: 0; transform: translateY(-20px);}
+            to {opacity: 1; transform: translateY(0);}
+        }
+
+        h2 {
+            color: #2c3e50;
+            margin-bottom: 15px;
+        }
+
+        input[type="number"] {
+            width: 100%;
+            padding: 12px;
+            margin: 10px 0;
+            border: 1px solid #ccc;
+            border-radius: 10px;
+            font-size: 16px;
+        }
+
+        button {
+            padding: 10px 20px;
+            margin: 10px 5px;
+            font-size: 16px;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+
+        .calculate-btn {
+            background-color: #3498db;
+            color: white;
+        }
+
+        .calculate-btn:hover {
+            background-color: #2980b9;
+        }
+
+        .reset-btn {
+            background-color: #e74c3c;
+            color: white;
+        }
+
+        .reset-btn:hover {
+            background-color: #c0392b;
+        }
+
+        .result-card {
+            margin-top: 20px;
+            padding: 20px;
+            border-radius: 16px;
+            background: #f9f9f9;
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.05);
+        }
+
+        .bmi-value {
+            font-size: 24px;
+            color: #2c3e50;
+        }
+
+        .bmi-category {
+            font-size: 18px;
+            font-weight: bold;
+            margin-top: 10px;
+        }
+
+        .bmi-feedback {
+            margin-top: 10px;
+            font-size: 14px;
+            color: #555;
+        }
+
+        .emoji {
+            font-size: 40px;
+            margin-top: 10px;
+        }
+
+        .chart, .history {
+            margin-top: 30px;
+            font-size: 14px;
+            text-align: left;
+            color: #444;
+        }
+
+        .history-list {
+            font-size: 13px;
+            margin-top: 8px;
+            max-height: 100px;
+            overflow-y: auto;
+        }
+
+        a {
+            display: inline-block;
+            margin-top: 20px;
+            color: #3498db;
+            text-decoration: none;
+        }
+
+        a:hover {
+            text-decoration: underline;
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>💪 BMI Calculator</h2>
+        <input type="number" id="height" step="0.01" placeholder="Height in meters">
+        <input type="number" id="weight" step="0.1" placeholder="Weight in kg">
+        <div>
+            <button class="calculate-btn" onclick="calculateBMI()">Calculate</button>
+            <button class="reset-btn" onclick="resetForm()">Reset</button>
+        </div>
+
+        <div class="result-card" id="result" style="display:none;">
+            <div class="emoji" id="emoji">😊</div>
+            <div class="bmi-value" id="bmiValue"></div>
+            <div class="bmi-category" id="bmiCategory"></div>
+            <div class="bmi-feedback" id="bmiFeedback"></div>
+        </div>
+
+        <div class="chart">
+            <h4>BMI Chart</h4>
+            <ul>
+                <li><b>&lt;18.5</b>: Underweight</li>
+                <li><b>18.5–24.9</b>: Normal</li>
+                <li><b>25–29.9</b>: Overweight</li>
+                <li><b>30+</b>: Obese</li>
+            </ul>
+        </div>
+
+        <div class="history">
+            <h4>📜 BMI History</h4>
+            <div class="history-list" id="bmiHistory"></div>
+        </div>
+
+        <a href="/dashboard">← Back to Dashboard</a>
+    </div>
+
+    <script>
+        function calculateBMI() {
+            const height = parseFloat(document.getElementById("height").value);
+            const weight = parseFloat(document.getElementById("weight").value);
+            const resultDiv = document.getElementById("result");
+            const bmiValue = document.getElementById("bmiValue");
+            const bmiCategory = document.getElementById("bmiCategory");
+            const bmiFeedback = document.getElementById("bmiFeedback");
+            const emoji = document.getElementById("emoji");
+            const historyDiv = document.getElementById("bmiHistory");
+
+            if (!height || !weight || height <= 0 || weight <= 0) {
+                alert("Please enter valid height and weight.");
+                return;
+            }
+
+            const bmi = (weight / (height * height)).toFixed(2);
+            let category = "", feedback = "", face = "";
+
+            if (bmi < 18.5) {
+                category = "Underweight";
+                feedback = "Try to eat more and build muscle.";
+                face = "😟";
+            } else if (bmi < 25) {
+                category = "Normal";
+                feedback = "Great job! Stay active.";
+                face = "😄";
+            } else if (bmi < 30) {
+                category = "Overweight";
+                feedback = "Consider regular workouts and healthy food.";
+                face = "😐";
+            } else {
+                category = "Obese";
+                feedback = "Consider seeing a doctor or nutritionist.";
+                face = "😓";
+            }
+
+            bmiValue.innerText = `Your BMI: ${bmi}`;
+            bmiCategory.innerText = `Category: ${category}`;
+            bmiFeedback.innerText = `Advice: ${feedback}`;
+            emoji.innerText = face;
+            resultDiv.style.display = "block";
+
+            // Save to local storage
+            const time = new Date().toLocaleString();
+            const entry = `${time} — BMI: ${bmi} (${category})`;
+            let history = JSON.parse(localStorage.getItem("bmiHistory")) || [];
+            history.unshift(entry);
+            localStorage.setItem("bmiHistory", JSON.stringify(history));
+            renderHistory();
+        }
+
+        function resetForm() {
+            document.getElementById("height").value = "";
+            document.getElementById("weight").value = "";
+            document.getElementById("result").style.display = "none";
+        }
+
+        function renderHistory() {
+            const history = JSON.parse(localStorage.getItem("bmiHistory")) || [];
+            const historyDiv = document.getElementById("bmiHistory");
+            historyDiv.innerHTML = history.slice(0, 5).map(item => `<div>• ${item}</div>`).join("");
+        }
+
+        // Load history on page load
+        window.onload = renderHistory;
+    </script>
+</body>
+</html>

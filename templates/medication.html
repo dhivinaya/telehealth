@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Medication Reminders</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.0/socket.io.min.js"></script>
+  <style>
+    :root {
+      --primary: #13413e;
+      --secondary: #f0efeb;
+      --accent: #c9d8c5;
+      --danger: #e5989b;
+      --text: #2f3e46;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      margin: 0;
+      padding: 0;
+      background: linear-gradient(135deg, var(--secondary), #eafaf1);
+      color: var(--text);
+      height: 100vh;
+    }
+
+    header {
+      background-color: var(--primary);
+      color: white;
+      padding: 20px;
+      text-align: center;
+      font-size: 2rem;
+      border-radius: 0 0 20px 20px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+      position: relative;
+    }
+
+    #clock {
+      position: absolute;
+      top: 15px;
+      right: 20px;
+      font-size: 1rem;
+      color: #fdfdfd;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: 30px auto;
+      padding: 30px;
+      background: #fff;
+      border-radius: 16px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+    }
+
+    .form-section input,
+    textarea,
+    button,
+    select {
+      font-size: 1rem;
+      padding: 12px;
+      margin: 8px 5px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      outline: none;
+      width: 100%;
+    }
+
+    textarea {
+      resize: vertical;
+      min-height: 60px;
+    }
+
+    button {
+      background-color: var(--primary);
+      color: rgb(182, 140, 140);
+      border: none;
+      transition: background 0.3s;
+    }
+
+    button:hover {
+      background-color: #194e4a;
+    }
+
+    .reminders-list {
+      list-style: none;
+      padding: 0;
+      margin-top: 20px;
+      max-height: 350px;
+      overflow-y: auto;
+    }
+
+    .reminder-item {
+      background-color: var(--secondary);
+      border-left: 6px solid var(--primary);
+      margin: 10px 0;
+      padding: 15px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-radius: 10px;
+    }
+
+    .reminder-item span {
+      flex-grow: 1;
+      margin-left: 10px;
+    }
+
+    .reminder-item button {
+      background-color: var(--danger);
+      color: white;
+      padding: 6px 10px;
+      margin-left: 5px;
+    }
+
+    .reminder-item button:hover {
+      background-color: #d97b84;
+    }
+
+    #search-bar {
+      padding: 10px;
+      width: 100%;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      border: 1px solid #ccc;
+    }
+
+    .timing-bar {
+      margin-top: 20px;
+      height: 6px;
+      background: var(--accent);
+      border-radius: 10px;
+      animation: timingAnimation 30s linear infinite;
+    }
+
+    @keyframes timingAnimation {
+      from {
+        width: 0%;
+      }
+
+      to {
+        width: 100%;
+      }
+    }
+
+    @media screen and (max-width: 600px) {
+      header {
+        font-size: 1.5rem;
+      }
+
+      #clock {
+        font-size: 0.9rem;
+        top: 10px;
+        right: 15px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <header>
+    Medication Reminders
+    <div id="clock"></div>
+  </header>
+
+  <div class="container">
+    <input type="text" id="search-bar" placeholder="Search reminders..." oninput="searchReminders()" />
+
+    <div class="form-section">
+      <input type="text" id="medication-name" placeholder="Medication Name" />
+      <input type="text" id="medication-time" placeholder="Time (e.g., 08:00 AM)" />
+      <textarea id="medication-description" placeholder="Description or Notes..."></textarea>
+      <div>
+        <label><input type="radio" name="recurrence" value="Daily" /> Daily</label>
+        <label><input type="radio" name="recurrence" value="Weekly" /> Weekly</label>
+        <label><input type="radio" name="recurrence" value="Monthly" /> Monthly</label>
+      </div>
+      <button onclick="addReminder()" title="Add this medication to your reminder list">Add Reminder</button>
+    </div>
+
+    <ul id="reminders-list" class="reminders-list">
+      <!-- JavaScript will populate -->
+    </ul>
+
+    <div class="timing-bar"></div>
+  </div>
+
+  <script>
+    const socket = io.connect('http://' + document.domain + ':' + location.port);
+    let reminders = [];
+
+    function updateReminders(data) {
+      reminders = data;
+      const list = document.getElementById('reminders-list');
+      list.innerHTML = '';
+
+      reminders.forEach(reminder => {
+        const li = document.createElement('li');
+        li.className = 'reminder-item';
+        li.innerHTML = `
+          <input type="checkbox" title="Mark as done" />
+          <span>${reminder.name} - ${reminder.time} ${reminder.recurrence ? '(' + reminder.recurrence + ')' : ''}</span>
+          <div>
+            <button onclick="editReminder('${reminder.name}', '${reminder.time}')" title="Edit Reminder">Edit</button>
+            <button onclick="deleteReminder('${reminder.name}')" title="Delete Reminder">Delete</button>
+          </div>
+        `;
+        list.appendChild(li);
+      });
+    }
+
+    socket.on('update_reminders', data => {
+      updateReminders(data.reminders);
+    });
+
+    window.onload = () => {
+      socket.emit('get_reminders');
+      updateClock();
+      setInterval(updateClock, 1000);
+    };
+
+    function addReminder() {
+      const name = document.getElementById('medication-name').value.trim();
+      const time = document.getElementById('medication-time').value.trim();
+      const recurrence = document.querySelector('input[name="recurrence"]:checked')?.value;
+      const description = document.getElementById('medication-description').value.trim();
+
+      if (name && time) {
+        socket.emit('add_reminder', { name, time, recurrence, description });
+        document.getElementById('medication-name').value = '';
+        document.getElementById('medication-time').value = '';
+        document.getElementById('medication-description').value = '';
+      } else {
+        alert('Please enter medication name and time.');
+      }
+    }
+
+    function deleteReminder(name) {
+      if (confirm('Are you sure you want to delete this reminder?')) {
+        socket.emit('delete_reminder', { name });
+      }
+    }
+
+    function editReminder(name, time) {
+      const newName = prompt('Edit medication name:', name);
+      const newTime = prompt('Edit medication time:', time);
+      if (newName && newTime) {
+        socket.emit('edit_reminder', { oldName: name, newName, newTime });
+      }
+    }
+
+    function searchReminders() {
+      const query = document.getElementById('search-bar').value.toLowerCase();
+      const filtered = reminders.filter(r => r.name.toLowerCase().includes(query));
+      updateReminders(filtered);
+    }
+
+    function updateClock() {
+      const now = new Date();
+      const clock = document.getElementById('clock');
+      clock.innerHTML = now.toLocaleTimeString();
+    }
+  </script>
+</body>
+
+</html>

@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Mental Health Self Check</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            padding: 40px;
+            background: linear-gradient(to right, #dfefff, #f5faff);
+        }
+
+        .container {
+            background: #fff;
+            max-width: 650px;
+            margin: auto;
+            padding: 30px;
+            border-radius: 16px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            animation: fadeIn 1s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        h2 {
+            text-align: center;
+            color: #0072ff;
+            margin-bottom: 10px;
+        }
+
+        #clock {
+            text-align: center;
+            font-size: 16px;
+            margin-bottom: 20px;
+            color: #666;
+        }
+
+        .tooltip {
+            font-size: 12px;
+            color: #888;
+        }
+
+        label {
+            font-weight: 600;
+            display: block;
+            margin-top: 18px;
+        }
+
+        select {
+            width: 100%;
+            padding: 10px;
+            border-radius: 6px;
+            border: 1px solid #ccc;
+            margin-top: 5px;
+        }
+
+        button {
+            margin-top: 30px;
+            padding: 14px;
+            background: #0072ff;
+            color: white;
+            border: none;
+            width: 100%;
+            border-radius: 10px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #005fd1;
+        }
+
+        .result {
+            margin-top: 30px;
+            font-size: 18px;
+            color: #333;
+            font-weight: bold;
+            text-align: center;
+        }
+
+        .tip {
+            background: #f0f9ff;
+            border-left: 4px solid #0072ff;
+            padding: 10px;
+            font-size: 14px;
+            margin-top: 30px;
+            border-radius: 6px;
+            color: #333;
+        }
+
+        .progress {
+            height: 10px;
+            width: 100%;
+            background: #eee;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-top: 10px;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: #0072ff;
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        .mood {
+            margin-top: 20px;
+            text-align: center;
+        }
+
+        .mood select {
+            width: auto;
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 20px;
+            }
+
+            .container {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Mental Health Self Check</h2>
+        <div id="clock"></div>
+
+        <form method="POST" oninput="updateProgress()" onsubmit="return validateForm()">
+            <div class="mood">
+                <label>Your Mood Now:
+                    <select id="mood">
+                        <option>😊 Happy</option>
+                        <option>😐 Okay</option>
+                        <option>😔 Sad</option>
+                        <option>😡 Angry</option>
+                        <option>😴 Tired</option>
+                    </select>
+                </label>
+            </div>
+
+            <label>1. I feel anxious or worried often: <span class="tooltip">(e.g., nervous or panicky)</span></label>
+            <select name="q1" required>
+                <option value="">Select</option>
+                <option value="0">Never</option>
+                <option value="1">Sometimes</option>
+                <option value="2">Often</option>
+                <option value="3">Always</option>
+            </select>
+
+            <label>2. I have trouble sleeping: <span class="tooltip">(e.g., insomnia or nightmares)</span></label>
+            <select name="q2" required>
+                <option value="">Select</option>
+                <option value="0">Never</option>
+                <option value="1">Sometimes</option>
+                <option value="2">Often</option>
+                <option value="3">Always</option>
+            </select>
+
+            <label>3. I feel tired or lack energy frequently:</label>
+            <select name="q3" required>
+                <option value="">Select</option>
+                <option value="0">Never</option>
+                <option value="1">Sometimes</option>
+                <option value="2">Often</option>
+                <option value="3">Always</option>
+            </select>
+
+            <label>4. I feel sad or hopeless:</label>
+            <select name="q4" required>
+                <option value="">Select</option>
+                <option value="0">Never</option>
+                <option value="1">Sometimes</option>
+                <option value="2">Often</option>
+                <option value="3">Always</option>
+            </select>
+
+            <label>5. I have trouble focusing or making decisions:</label>
+            <select name="q5" required>
+                <option value="">Select</option>
+                <option value="0">Never</option>
+                <option value="1">Sometimes</option>
+                <option value="2">Often</option>
+                <option value="3">Always</option>
+            </select>
+
+            <!-- Extra Questions -->
+            <label>6. I feel overwhelmed easily:</label>
+            <select name="q6" required>
+                <option value="">Select</option>
+                <option value="0">Never</option>
+                <option value="1">Sometimes</option>
+                <option value="2">Often</option>
+                <option value="3">Always</option>
+            </select>
+
+            <label>7. I avoid social situations:</label>
+            <select name="q7" required>
+                <option value="">Select</option>
+                <option value="0">Never</option>
+                <option value="1">Sometimes</option>
+                <option value="2">Often</option>
+                <option value="3">Always</option>
+            </select>
+
+            <label>8. I feel irritable or angry often:</label>
+            <select name="q8" required>
+                <option value="">Select</option>
+                <option value="0">Never</option>
+                <option value="1">Sometimes</option>
+                <option value="2">Often</option>
+                <option value="3">Always</option>
+            </select>
+
+            <label>9. I’ve lost interest in things I used to enjoy:</label>
+            <select name="q9" required>
+                <option value="">Select</option>
+                <option value="0">Never</option>
+                <option value="1">Sometimes</option>
+                <option value="2">Often</option>
+                <option value="3">Always</option>
+            </select>
+
+            <label>10. I have changes in appetite or weight:</label>
+            <select name="q10" required>
+                <option value="">Select</option>
+                <option value="0">Never</option>
+                <option value="1">Sometimes</option>
+                <option value="2">Often</option>
+                <option value="3">Always</option>
+            </select>
+
+            <div class="progress">
+                <div class="progress-bar" id="progressBar"></div>
+            </div>
+
+            <button type="submit">Check My Mental Health</button>
+        </form>
+
+        {% if result %}
+            <div class="result">{{ result }}</div>
+        {% endif %}
+
+        <div class="tip" id="tipOfTheDay"></div>
+    </div>
+
+    <script>
+        function updateClock() {
+            const now = new Date();
+            const clock = document.getElementById("clock");
+            clock.textContent = now.toLocaleString();
+        }
+
+        setInterval(updateClock, 1000);
+        updateClock();
+
+        function updateProgress() {
+            const selects = document.querySelectorAll('select[name^="q"]');
+            let filled = 0;
+            selects.forEach(s => { if (s.value) filled++; });
+            const percent = (filled / selects.length) * 100;
+            document.getElementById('progressBar').style.width = percent + '%';
+        }
+
+        function validateForm() {
+            const selects = document.querySelectorAll('select[name^="q"]');
+            for (let s of selects) {
+                if (!s.value) {
+                    alert("Please answer all questions.");
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        const tips = [
+            "Take breaks when needed and get enough rest.",
+            "Practice mindfulness or meditation daily.",
+            "Talk to someone you trust when you’re struggling.",
+            "Stay hydrated and eat a balanced diet.",
+            "Exercise regularly to boost mood and energy.",
+            "Avoid too much screen time, especially before bed.",
+            "Journaling can help release negative thoughts.",
+            "Stay connected with friends and family.",
+            "Limit caffeine and alcohol intake.",
+            "Focus on things you can control, not what you can’t."
+        ];
+        document.getElementById("tipOfTheDay").textContent = "💡 Tip of the Day: " + tips[new Date().getDay()];
+    </script>
+</body>
+</html>

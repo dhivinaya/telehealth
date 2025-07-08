@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>User Settings - Doctor Health App</title>
+  <script src="https://cdn.socket.io/4.0.1/socket.io.min.js"></script>
+  <style>
+    body {
+      font-family: 'Outfit', sans-serif;
+      background: #1e1e2f;
+      color: white;
+      padding: 40px;
+      max-width: 700px;
+      margin: auto;
+    }
+    h2 {
+      color: #00ffe7;
+    }
+    .setting-item {
+      margin: 15px 0;
+      padding: 15px;
+      background: #2e2e3e;
+      border-radius: 10px;
+    }
+    label {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 1.1em;
+    }
+    select, input[type="checkbox"], input[type="radio"] {
+      margin-left: 10px;
+    }
+    button {
+      margin-top: 30px;
+      padding: 12px 30px;
+      border: none;
+      background-color: #00ffe7;
+      color: #1e1e2f;
+      font-weight: bold;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 1.1em;
+    }
+  </style>
+</head>
+<body>
+  <h2>⚙️ User Settings</h2>
+
+  <div class="setting-item">
+    <label>🌙 Dark Mode
+      <input type="checkbox" id="darkModeToggle" />
+    </label>
+  </div>
+
+  <div class="setting-item">
+    <label>🔔 Enable Notifications
+      <input type="checkbox" id="notifToggle" />
+    </label>
+  </div>
+
+  <div class="setting-item">
+    <label>🌐 Language
+      <select id="langSelect">
+        <option value="en">English</option>
+        <option value="ta">Tamil</option>
+        <option value="hi">Hindi</option>
+      </select>
+    </label>
+  </div>
+
+  <div class="setting-item">
+    <label>🟢 Online Status
+      <select id="onlineStatusSelect">
+        <option value="online">Online</option>
+        <option value="invisible">Invisible</option>
+        <option value="busy">Busy</option>
+        <option value="away">Away</option>
+      </select>
+    </label>
+  </div>
+
+  <div class="setting-item">
+    <label>⏰ Timezone
+      <select id="timezoneSelect">
+        <option value="UTC">UTC</option>
+        <option value="Asia/Kolkata">Asia/Kolkata</option>
+        <option value="America/New_York">America/New_York</option>
+        <option value="Europe/London">Europe/London</option>
+        <option value="Asia/Tokyo">Asia/Tokyo</option>
+        <!-- Add more timezones as needed -->
+      </select>
+    </label>
+  </div>
+
+  <div class="setting-item">
+    <label>🔄 Auto Update
+      <input type="checkbox" id="autoUpdateToggle" />
+    </label>
+  </div>
+
+  <div class="setting-item">
+    <label>🔤 Font Size
+      <select id="fontSizeSelect">
+        <option value="small">Small</option>
+        <option value="medium">Medium</option>
+        <option value="large">Large</option>
+      </select>
+    </label>
+  </div>
+
+  <div class="setting-item">
+    <label>📧 Email Alerts
+      <input type="checkbox" id="emailAlertsToggle" />
+    </label>
+  </div>
+
+  <div class="setting-item">
+    <label>📱 SMS Alerts
+      <input type="checkbox" id="smsAlertsToggle" />
+    </label>
+  </div>
+
+  <div class="setting-item">
+    <label>🔒 Privacy Mode
+      <input type="checkbox" id="privacyModeToggle" />
+    </label>
+  </div>
+
+  <div class="setting-item">
+    <label>🛡️ Two-Factor Authentication
+      <input type="checkbox" id="twoFactorToggle" />
+    </label>
+  </div>
+
+  <button id="saveBtn">Save Settings</button>
+
+  <script>
+    const userId = 1; // Replace with actual logged-in user ID
+
+    const socket = io("http://localhost:5000");
+
+    const darkModeToggle = document.getElementById("darkModeToggle");
+    const notifToggle = document.getElementById("notifToggle");
+    const langSelect = document.getElementById("langSelect");
+    const onlineStatusSelect = document.getElementById("onlineStatusSelect");
+    const timezoneSelect = document.getElementById("timezoneSelect");
+    const autoUpdateToggle = document.getElementById("autoUpdateToggle");
+    const fontSizeSelect = document.getElementById("fontSizeSelect");
+    const emailAlertsToggle = document.getElementById("emailAlertsToggle");
+    const smsAlertsToggle = document.getElementById("smsAlertsToggle");
+    const privacyModeToggle = document.getElementById("privacyModeToggle");
+    const twoFactorToggle = document.getElementById("twoFactorToggle");
+    const saveBtn = document.getElementById("saveBtn");
+
+    async function loadSettings() {
+      try {
+        const res = await fetch(`http://localhost:5000/settings/${userId}`);
+        const settings = await res.json();
+
+        darkModeToggle.checked = settings.dark_mode === 'dark';
+        notifToggle.checked = settings.notifications === 1 || settings.notifications === true;
+        langSelect.value = settings.language;
+        onlineStatusSelect.value = settings.online_status;
+        timezoneSelect.value = settings.timezone;
+        autoUpdateToggle.checked = settings.auto_update === 1 || settings.auto_update === true;
+        fontSizeSelect.value = settings.font_size;
+        emailAlertsToggle.checked = settings.email_alerts === 1 || settings.email_alerts === true;
+        smsAlertsToggle.checked = settings.sms_alerts === 1 || settings.sms_alerts === true;
+        privacyModeToggle.checked = settings.privacy_mode === 1 || settings.privacy_mode === true;
+        twoFactorToggle.checked = settings.two_factor_auth === 1 || settings.two_factor_auth === true;
+
+        applyDarkMode();
+      } catch (error) {
+        alert("Failed to load settings");
+      }
+    }
+
+    function applyDarkMode() {
+      if (darkModeToggle.checked) {
+        document.body.style.background = "#121212";
+        document.body.style.color = "white";
+      } else {
+        document.body.style.background = "#fff";
+        document.body.style.color = "#121212";
+      }
+    }
+
+    darkModeToggle.addEventListener('change', applyDarkMode);
+
+    saveBtn.addEventListener('click', async () => {
+      const data = {
+        dark_mode: darkModeToggle.checked ? 'dark' : 'light',
+        notifications: notifToggle.checked,
+        language: langSelect.value,
+        online_status: onlineStatusSelect.value,
+        timezone: timezoneSelect.value,
+        auto_update: autoUpdateToggle.checked,
+        font_size: fontSizeSelect.value,
+        email_alerts: emailAlertsToggle.checked,
+        sms_alerts: smsAlertsToggle.checked,
+        privacy_mode: privacyModeToggle.checked,
+        two_factor_auth: twoFactorToggle.checked
+      };
+
+      try {
+        const res = await fetch(`http://localhost:5000/settings/${userId}`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(data)
+        });
+        const result = await res.json();
+        alert(result.message);
+      } catch (error) {
+        alert("Failed to save settings");
+      }
+    });
+
+    // Socket event example: when server broadcasts online status change
+    socket.on('status_updated', data => {
+      if (data.user_id === userId) {
+        alert(`Your online status changed to ${data.status}`);
+        onlineStatusSelect.value = data.status;
+      }
+    });
+
+    loadSettings();
+  </script>
+</body>
+</html>

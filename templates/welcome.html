@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Welcome to Health Monitoring System</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    /* Reset & General Styling */
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      scroll-behavior: smooth;
+    }
+
+    body {
+      font-family: 'Poppins', sans-serif;
+      background-color: #000;
+      color: #fff;
+      overflow-x: hidden;
+    }
+
+    h1, h2, p {
+      margin: 0 0 15px;
+    }
+
+    a {
+      text-decoration: none;
+      color: inherit;
+    }
+
+    /* Background */
+    .bg {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: url('https://images.unsplash.com/photo-1588776814546-2f6f24c68c4c') no-repeat center center fixed;
+      background-size: cover;
+      filter: brightness(50%);
+      z-index: -1;
+    }
+
+    /* Parallax Welcome Section */
+    .parallax {
+      background-image: url('https://images.unsplash.com/photo-1593642532973-d31b6557fa68');
+      background-attachment: fixed;
+      background-size: cover;
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .parallax-text {
+      font-size: 50px;
+      font-weight: bold;
+      text-align: center;
+      color: #fff;
+      text-shadow: 2px 2px 6px rgba(0, 0, 0, 0.6);
+      animation: textFadeIn 3s ease-in-out infinite;
+    }
+
+    @keyframes textFadeIn {
+      0%, 100% { opacity: 0; transform: translateY(20px); }
+      50% { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Overlay Section */
+    .overlay {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      background: rgba(0, 70, 100, 0.7);
+    }
+
+    .container {
+      text-align: center;
+      padding: 40px;
+      max-width: 1000px;
+      margin: auto;
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(10px);
+      border-radius: 16px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+      animation: fadeIn 2s ease-in-out;
+    }
+
+    @keyframes fadeIn {
+      from { transform: translateY(50px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+
+    h1 {
+      font-size: 42px;
+      color: #fff;
+      margin-bottom: 20px;
+    }
+
+    p {
+      font-size: 18px;
+      line-height: 1.6;
+    }
+
+    .glass-container {
+      margin-top: 30px;
+    }
+
+    .cta-btn, .login-btn {
+      padding: 14px 26px;
+      background: #007bff;
+      color: #fff;
+      border-radius: 8px;
+      font-size: 18px;
+      font-weight: 600;
+      margin: 10px;
+      display: inline-block;
+      transition: background 0.3s, transform 0.3s;
+    }
+
+    .cta-btn:hover, .login-btn:hover {
+      background: #0056b3;
+      transform: translateY(-3px);
+    }
+
+    /* About Us Section */
+    #about-us {
+      padding: 60px 20px;
+      background: rgba(255, 255, 255, 0.05);
+    }
+
+    #about-us h2 {
+      text-align: center;
+      font-size: 36px;
+      margin-bottom: 30px;
+    }
+
+    .features-table {
+      width: 100%;
+      border-collapse: collapse;
+      max-width: 1000px;
+      margin: 0 auto;
+    }
+
+    .features-table td {
+      padding: 30px 20px;
+      vertical-align: top;
+      text-align: center;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .features-table td i {
+      font-size: 36px;
+      margin-bottom: 10px;
+      display: block;
+      color: #00d4ff;
+    }
+
+    .features-table td h3 {
+      font-size: 20px;
+      margin-bottom: 10px;
+      color: #fff;
+    }
+
+    .features-table td p {
+      font-size: 16px;
+      color: #ccc;
+    }
+
+    /* Footer */
+    footer {
+      text-align: center;
+      padding: 20px;
+      font-size: 14px;
+      background: rgba(0, 0, 0, 0.7);
+      color: #ccc;
+    }
+
+    /* Responsive Design */
+    @media (max-width: 768px) {
+      h1 {
+        font-size: 32px;
+      }
+
+      .cta-btn, .login-btn {
+        padding: 12px 20px;
+      }
+
+      .features-table {
+        display: block;
+      }
+
+      .features-table tr {
+        display: block;
+        margin-bottom: 20px;
+      }
+
+      .features-table td {
+        display: block;
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Parallax Welcome Banner -->
+  <div class="parallax">
+    <div class="parallax-text">Welcome to Health Monitoring System</div>
+  </div>
+
+  <!-- Main Overlay Content -->
+  <div class="overlay">
+    <div class="container">
+      <h1>Your Digital Healthcare Companion</h1>
+      <p>Revolutionizing healthcare with online consultations, health tracking, and wellness management.</p>
+      <div class="glass-container">
+        <a class="cta-btn" href="#about-us">Learn More</a>
+        <a class="login-btn" href="{{ url_for('login') }}">Login</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- About Us Section -->
+  <section id="about-us">
+    <h2>About Us</h2>
+    <table class="features-table">
+      <tr>
+        <td>
+          <i>🩺</i>
+          <h3>Online Consultations</h3>
+          <p>Book virtual appointments with certified doctors anytime, anywhere.</p>
+        </td>
+        <td>
+          <i>📊</i>
+          <h3>Health Monitoring</h3>
+          <p>Track vitals like blood pressure, sugar levels, and heart rate in real time.</p>
+        </td>
+      </tr>
+      <tr>
+        <td>
+          <i>📅</i>
+          <h3>Appointment Scheduler</h3>
+          <p>Manage your health appointments and reminders easily.</p>
+        </td>
+        <td>
+          <i>📄</i>
+          <h3>Prescription Management</h3>
+          <p>Upload, view, and download prescriptions securely and conveniently.</p>
+        </td>
+      </tr>
+      <tr>
+        <td>
+          <i>📞</i>
+          <h3>Video Calling</h3>
+          <p>Experience real-time video consultations with healthcare experts.</p>
+        </td>
+        <td>
+          <i>🌐</i>
+          <h3>Multi-language Support</h3>
+          <p>Access healthcare services in your preferred language for ease of use.</p>
+        </td>
+      </tr>
+    </table>
+  </section>
+
+  <!-- Footer -->
+  <footer>
+    <p>&copy; 2025 Online Doctor Health Monitoring System. All rights reserved.</p>
+  </footer>
+</body>
+</html>

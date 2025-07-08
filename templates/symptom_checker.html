@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>AI Symptom Checker</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: linear-gradient(to right, #dbeafe, #f0fdf4);
+      margin: 0;
+      padding: 30px;
+    }
+
+    .box {
+      max-width: 650px;
+      margin: auto;
+      background: #fff;
+      padding: 30px;
+      border-radius: 16px;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+    }
+
+    h2 {
+      color: #0077b6;
+      margin-bottom: 20px;
+      text-align: center;
+    }
+
+    .search-bar {
+      width: 100%;
+      padding: 10px;
+      font-size: 1rem;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      margin-bottom: 15px;
+    }
+
+    .symptom-list {
+      max-height: 200px;
+      overflow-y: auto;
+      margin-bottom: 20px;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 8px;
+      font-size: 1rem;
+    }
+
+    .btn {
+      background: #0077b6;
+      color: white;
+      padding: 12px 20px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 1rem;
+      margin: 5px 5px 5px 0;
+    }
+
+    .btn:hover {
+      background: #005f87;
+    }
+
+    .result {
+      margin-top: 20px;
+      font-weight: bold;
+      color: #333;
+      background: #e0f7fa;
+      padding: 18px;
+      border-radius: 10px;
+      white-space: pre-line;
+    }
+
+    .tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    .tag {
+      background-color: #cce5ff;
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 0.9rem;
+      color: #004085;
+    }
+
+    .spinner {
+      border: 4px solid #f3f3f3;
+      border-top: 4px solid #0077b6;
+      border-radius: 50%;
+      width: 20px;
+      height: 20px;
+      animation: spin 1s linear infinite;
+      display: inline-block;
+      vertical-align: middle;
+      margin-left: 10px;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    @media (max-width: 600px) {
+      .btn {
+        width: 100%;
+      }
+    }
+
+    #chatBox {
+      display: none;
+      margin-top: 20px;
+      padding: 20px;
+      background: #f1f1f1;
+      border-radius: 10px;
+    }
+
+    .info {
+      font-size: 0.9rem;
+      color: #555;
+      margin-bottom: 15px;
+    }
+  </style>
+</head>
+<body>
+  <div class="box">
+    <h2>🩺 AI Symptom Checker</h2>
+
+    <input type="text" id="searchInput" class="search-bar" placeholder="Search symptoms...">
+    <div class="info">Selected symptoms: <span id="symptomCount">0</span></div>
+
+    <form id="symptomForm">
+      <div class="tags" id="selectedTags"></div>
+
+      <div class="symptom-list" id="symptomList">
+        <label><input type="checkbox" name="symptoms" value="s_21"> Fever</label>
+        <label><input type="checkbox" name="symptoms" value="s_98"> Cough</label>
+        <label><input type="checkbox" name="symptoms" value="s_10"> Headache</label>
+        <label><input type="checkbox" name="symptoms" value="s_188"> Nausea</label>
+        <label><input type="checkbox" name="symptoms" value="s_1193"> Sore Throat</label>
+        <label><input type="checkbox" name="symptoms" value="s_13"> Chest Pain</label>
+        <label><input type="checkbox" name="symptoms" value="s_15"> Shortness of Breath</label>
+        <label><input type="checkbox" name="symptoms" value="s_9"> Fatigue</label>
+        <label><input type="checkbox" name="symptoms" value="s_45"> Diarrhea</label>
+        <label><input type="checkbox" name="symptoms" value="s_96"> Rash</label>
+      </div>
+
+      <button type="submit" class="btn">Check Symptoms</button>
+      <button type="button" class="btn" onclick="resetForm()">Clear</button>
+      <button type="button" class="btn" onclick="downloadReport()">Download Report</button>
+    </form>
+
+    <div id="resultBox" class="result" style="display: none;"></div>
+
+    <button class="btn" onclick="toggleChat()">Chat with AI</button>
+    <div id="chatBox">
+      <p>AI: Hello! How can I help you today?</p>
+      <p>AI: You can check symptoms, ask for health tips, or get condition information.</p>
+    </div>
+  </div>
+
+  <script>
+    const form = document.getElementById('symptomForm');
+    const resultBox = document.getElementById('resultBox');
+    const searchInput = document.getElementById('searchInput');
+    const chatBox = document.getElementById('chatBox');
+    const symptomCount = document.getElementById('symptomCount');
+    const selectedTags = document.getElementById('selectedTags');
+
+    function updateSelectedTags() {
+      const checked = document.querySelectorAll('input[name="symptoms"]:checked');
+      selectedTags.innerHTML = '';
+      checked.forEach(el => {
+        const tag = document.createElement('div');
+        tag.className = 'tag';
+        tag.innerText = el.parentElement.innerText;
+        selectedTags.appendChild(tag);
+      });
+      symptomCount.textContent = checked.length;
+    }
+
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+
+      const symptoms = Array.from(document.querySelectorAll('input[name="symptoms"]:checked')).map(el => ({
+        id: el.value,
+        choice_id: 'present'
+      }));
+
+      if (symptoms.length === 0) {
+        resultBox.innerText = 'Please select at least one symptom.';
+        resultBox.style.display = 'block';
+        return;
+      }
+
+      resultBox.innerHTML = 'Analyzing symptoms using AI... <span class="spinner"></span>';
+      resultBox.style.display = 'block';
+
+      setTimeout(() => {
+        const mockResults = [
+          { name: 'Common Cold', probability: 0.85 },
+          { name: 'Flu', probability: 0.75 },
+          { name: 'COVID-19', probability: 0.60 }
+        ];
+        let resultText = '🩺 Possible conditions:\n';
+        mockResults.forEach((cond, i) => {
+          resultText += `${i + 1}. ${cond.name} (${Math.round(cond.probability * 100)}%)\n`;
+        });
+        resultBox.innerText = resultText;
+        resultBox.scrollIntoView({ behavior: 'smooth' });
+      }, 2000);
+    });
+
+    document.querySelectorAll('input[name="symptoms"]').forEach(input => {
+      input.addEventListener('change', updateSelectedTags);
+    });
+
+    searchInput.addEventListener('input', function () {
+      const query = this.value.toLowerCase();
+      const labels = document.querySelectorAll('#symptomList label');
+      labels.forEach(label => {
+        label.style.display = label.innerText.toLowerCase().includes(query) ? 'block' : 'none';
+      });
+    });
+
+    function resetForm() {
+      form.reset();
+      resultBox.style.display = 'none';
+      searchInput.value = '';
+      updateSelectedTags();
+      document.querySelectorAll('#symptomList label').forEach(label => label.style.display = 'block');
+    }
+
+    function toggleChat() {
+      chatBox.style.display = chatBox.style.display === 'none' ? 'block' : 'none';
+    }
+
+    function downloadReport() {
+      const text = resultBox.innerText || 'No report available.';
+      const blob = new Blob([text], { type: 'text/plain' });
+      const link = document.createElement('a');
+      link.href = window.URL.createObjectURL(blob);
+      link.download = 'Symptom_Report.txt';
+      link.click();
+    }
+  </script>
+</body>
+</html>

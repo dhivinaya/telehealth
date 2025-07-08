@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>🔔 Notification Center</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f8f9fa;
+      margin: 20px;
+    }
+
+    h2 {
+      color: #007B8A;
+      text-align: center;
+    }
+
+    .controls, .filters {
+      text-align: center;
+      margin: 10px;
+    }
+
+    input, select, button {
+      padding: 8px;
+      margin: 5px;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+    }
+
+    .badge {
+      background: red;
+      color: white;
+      padding: 3px 8px;
+      border-radius: 50%;
+      font-size: 12px;
+      vertical-align: top;
+    }
+
+    .notification {
+      background: white;
+      padding: 15px;
+      margin: 10px auto;
+      border-left: 6px solid #28a745;
+      border-radius: 8px;
+      box-shadow: 0 0 8px rgba(0,0,0,0.05);
+      max-width: 600px;
+      position: relative;
+    }
+
+    .notification.unread {
+      background: #eaf6ff;
+    }
+
+    .category-tip { border-left-color: #ffc107; }
+    .category-alert { border-left-color: #dc3545; }
+    .category-appointment { border-left-color: #17a2b8; }
+
+    .actions {
+      margin-top: 8px;
+    }
+
+    .actions button {
+      padding: 5px 10px;
+      margin-right: 6px;
+      border: none;
+      border-radius: 4px;
+      background: #ddd;
+      cursor: pointer;
+    }
+
+    .search-bar {
+      width: 50%;
+      padding: 7px;
+    }
+  </style>
+</head>
+<body>
+
+  <h2>🔔 Notifications <span id="count" class="badge">0</span></h2>
+
+  <div class="controls">
+    <input type="text" id="notifMsg" placeholder="Enter notification message">
+    <select id="notifCategory">
+      <option value="appointment">Appointment</option>
+      <option value="tip">Health Tip</option>
+      <option value="alert">Alert</option>
+    </select>
+    <button onclick="addNotification()">Add Notification</button>
+  </div>
+
+  <div class="filters">
+    <input class="search-bar" type="text" id="search" onkeyup="searchNotifs()" placeholder="Search notifications...">
+    <button onclick="filterNotifs('all')">All</button>
+    <button onclick="filterNotifs('appointment')">Appointments</button>
+    <button onclick="filterNotifs('tip')">Tips</button>
+    <button onclick="filterNotifs('alert')">Alerts</button>
+  </div>
+
+  <div id="notifContainer"></div>
+
+  <audio id="notifSound" src="https://www.myinstants.com/media/sounds/notification.mp3" preload="auto"></audio>
+
+  <script>
+    let notifications = [];
+
+    function addNotification() {
+      const msg = document.getElementById('notifMsg').value.trim();
+      const category = document.getElementById('notifCategory').value;
+      if (!msg) return alert("Please enter a message.");
+
+      const notif = {
+        id: Date.now(),
+        message: msg,
+        category: category,
+        read: false,
+        timestamp: new Date().toLocaleString()
+      };
+
+      notifications.unshift(notif);
+      playSound();
+      renderNotifications();
+      updateBadge();
+
+      document.getElementById('notifMsg').value = "";
+    }
+
+    function renderNotifications(filter = 'all') {
+      const container = document.getElementById('notifContainer');
+      container.innerHTML = "";
+
+      const filtered = notifications.filter(n =>
+        filter === 'all' || n.category === filter
+      );
+
+      filtered.forEach(n => {
+        const div = document.createElement('div');
+        div.className = `notification ${n.read ? '' : 'unread'} category-${n.category}`;
+        div.innerHTML = `
+          <strong>${n.message}</strong><br>
+          <small>${n.timestamp}</small>
+          <div class="actions">
+            <button onclick="toggleRead(${n.id})">${n.read ? 'Mark Unread' : 'Mark Read'}</button>
+            <button onclick="deleteNotif(${n.id})">Delete</button>
+          </div>
+        `;
+        container.appendChild(div);
+      });
+    }
+
+    function toggleRead(id) {
+      const notif = notifications.find(n => n.id === id);
+      notif.read = !notif.read;
+      renderNotifications();
+      updateBadge();
+    }
+
+    function deleteNotif(id) {
+      notifications = notifications.filter(n => n.id !== id);
+      renderNotifications();
+      updateBadge();
+    }
+
+    function updateBadge() {
+      const unread = notifications.filter(n => !n.read).length;
+      document.getElementById('count').innerText = unread;
+    }
+
+    function filterNotifs(cat) {
+      renderNotifications(cat);
+    }
+
+    function searchNotifs() {
+      const term = document.getElementById('search').value.toLowerCase();
+      const container = document.getElementById('notifContainer');
+      container.innerHTML = "";
+
+      notifications.filter(n => n.message.toLowerCase().includes(term)).forEach(n => {
+        const div = document.createElement('div');
+        div.className = `notification ${n.read ? '' : 'unread'} category-${n.category}`;
+        div.innerHTML = `
+          <strong>${n.message}</strong><br>
+          <small>${n.timestamp}</small>
+          <div class="actions">
+            <button onclick="toggleRead(${n.id})">${n.read ? 'Mark Unread' : 'Mark Read'}</button>
+            <button onclick="deleteNotif(${n.id})">Delete</button>
+          </div>
+        `;
+        container.appendChild(div);
+      });
+    }
+
+    function playSound() {
+      document.getElementById('notifSound').play();
+    }
+
+    // Initial render
+    renderNotifications();
+  </script>
+</body>
+</html>

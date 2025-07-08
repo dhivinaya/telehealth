@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Online Doctor Health Monitoring</title>
+    <!-- Linking to style.css inside static/ -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>Welcome to Online Doctor Health Monitoring</h1>
+        <p>This app helps you connect with doctors and monitor your health remotely.</p>
+        
+        <div class="buttons">
+            <a href="/login">Login</a>
+            <a href="/register">Register</a>
+        </div>
+    </div>
+</body>
+</html>

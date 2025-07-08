@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Health Monitor</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <!-- Google Fonts & Icons -->
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+  <script src="https://kit.fontawesome.com/yourkit.js" crossorigin="anonymous"></script>
+
+  <!-- External Libraries -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.socket.io/4.0.1/socket.io.min.js"></script>
+  <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet"/>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css"/>
+
+  <style>
+    body {
+      margin: 0; padding: 0;
+      font-family: 'Poppins', sans-serif;
+      background: linear-gradient(135deg, #f6d365, #fda085);
+    }
+    .container { max-width: 1200px; margin: auto; padding: 40px 20px; }
+    h2 { text-align: center; color: #2c3e50; margin-bottom: 20px; }
+
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
+    .card {
+      background: #fff; border-radius: 16px;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+      padding: 20px; position: relative;
+      overflow: hidden;
+    }
+
+    .badge {
+      position: absolute; top: 20px; right: 20px;
+      padding: 6px 12px; border-radius: 20px;
+      background: #c0392b; color: #fff; font-weight: 600;
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+      0% { box-shadow: 0 0 0 0 rgba(39, 174, 96, 0.7); }
+      70% { box-shadow: 0 0 0 10px rgba(39, 174, 96, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(39, 174, 96, 0); }
+    }
+
+    form label { font-weight: 600; display: block; margin: 10px 0 6px; }
+    form input, form textarea {
+      width: 100%; padding: 10px;
+      border: 1px solid #ccc; border-radius: 8px;
+    }
+    form button {
+      margin-top: 12px; width: 100%;
+      background: #e67e22; color: #fff;
+      padding: 12px; font-size: 16px;
+      border: none; border-radius: 8px;
+      cursor: pointer; transition: .3s;
+    }
+    form button:hover { background: #d35400; }
+
+    #healthChart { max-width: 100%; }
+
+    .chat-panel {
+      max-height: 300px; overflow-y: auto;
+      border: 1px solid #eee; padding: 10px;
+      border-radius: 8px; background: #fafafa;
+      margin-bottom: 10px;
+    }
+    .msg { margin: 6px 0; font-size: 14px; }
+    .msg.me { text-align: right; color: #2980b9; }
+
+    .upload-wrap { margin-top: 10px; }
+    progress {
+      width: 100%; height: 8px;
+      border-radius: 4px; overflow: hidden;
+    }
+    progress::-webkit-progress-bar { background: #eee; }
+    progress::-webkit-progress-value { background: #3498db; }
+
+    .lang-select {
+      position: absolute; left: 20px; top: 20px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2 data-aos="fade-down">🩺 Real-Time Health Monitor — <span id="usernameDisplay">{{ username }}</span></h2>
+    <div class="lang-select">
+      🌐 <select onchange="switchLanguage(this.value)">
+        <option value="en">EN</option>
+        <option value="hi">HI</option>
+        <option value="ta">TA</option>
+      </select>
+    </div>
+
+    <div class="grid">
+      <!-- Health Form Card -->
+      <div class="card" data-aos="fade-right">
+        <span class="badge" id="doctorBadge">Doctor: Offline</span>
+        <form id="healthForm">
+          <label>Blood Pressure:</label>
+          <input name="bp" placeholder="120/80" required>
+          <label>Blood Sugar:</label>
+          <input name="sugar" placeholder="90 mg/dL" required>
+          <label>Pulse Rate:</label>
+          <input name="pulse" placeholder="72 bpm" required>
+          <button type="submit">Send Health Data</button>
+        </form>
+
+        <label style="margin-top: 20px;">Upload Prescription:</label>
+        <input type="file" id="prescriptionFile" accept="image/*,application/pdf">
+        <div class="upload-wrap">
+          <progress id="uploadProgress" value="0" max="100"></progress>
+        </div>
+        <div id="previewPrescription" style="margin-top:10px;font-size:13px;"></div>
+
+        <button onclick="downloadPDF()">📥 Download Health Report</button>
+      </div>
+
+      <!-- Chart -->
+      <div class="card" data-aos="fade-left">
+        <h3>📊 Health Trends</h3>
+        <canvas id="healthChart"></canvas>
+        <h3 style="margin-top: 30px;">📋 Dashboard</h3>
+        <p><strong>BP:</strong> <span id="bpDisplay">—</span></p>
+        <p><strong>Sugar:</strong> <span id="sugarDisplay">—</span></p>
+        <p><strong>Pulse:</strong> <span id="pulseDisplay">—</span></p>
+      </div>
+
+      <!-- Chat -->
+      <div class="card" data-aos="zoom-in">
+        <h3>💬 Live Chat</h3>
+        <div class="chat-panel" id="chatPanel"></div>
+        <div style="display: flex; gap: 8px;">
+          <input type="text" id="chatInput" placeholder="Type a message…">
+          <button onclick="sendChat()"><i class="fas fa-paper-plane"></i></button>
+        </div>
+        <button onclick="recordVoice()">🎤 Voice Message</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    AOS.init();
+    const socket = io();
+    const username = '{{ username }}';
+
+    // Chart.js
+    const ctx = document.getElementById('healthChart').getContext('2d');
+    const chart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: [],
+        datasets: [
+          { label: 'BP (sys)', data: [], fill: false, borderColor: '#e74c3c' },
+          { label: 'Sugar', data: [], fill: false, borderColor: '#3498db' }
+        ]
+      },
+      options: { responsive: true, scales: { y: { beginAtZero: false } } }
+    });
+
+    socket.emit('doctor_presence', { user: 'Doctor1', status: 'online' });
+
+    socket.on('doctor_presence', d => {
+      document.getElementById('doctorBadge').innerText = `${d.user}: ${d.status}`;
+      document.getElementById('doctorBadge').style.background = d.status === 'online' ? '#27ae60' : '#c0392b';
+    });
+
+    document.getElementById('healthForm').onsubmit = e => {
+      e.preventDefault();
+      const data = {
+        user: username,
+        bp: e.target.bp.value,
+        sugar: e.target.sugar.value,
+        pulse: e.target.pulse.value
+      };
+      socket.emit('send_health_data', data);
+    };
+
+    socket.on('send_health_data', data => {
+      const t = new Date();
+      chart.data.labels.push(t);
+      chart.data.datasets[0].data.push(parseInt(data.bp.split('/')[0]));
+      chart.data.datasets[1].data.push(parseInt(data.sugar));
+      chart.update();
+
+      document.getElementById('bpDisplay').innerText = data.bp;
+      document.getElementById('sugarDisplay').innerText = data.sugar;
+      document.getElementById('pulseDisplay').innerText = data.pulse;
+
+      const p = document.createElement('div');
+      p.className = 'msg';
+      p.innerHTML = `<strong>${data.user}</strong>: BP ${data.bp}, Sugar ${data.sugar}`;
+      document.getElementById('chatPanel').appendChild(p);
+
+      if (parseInt(data.bp.split('/')[0]) > 140 || parseInt(data.sugar) > 120) {
+        Toastify({ text: "⚠️ Abnormal data!", gravity: "top", position: "right", duration: 3000 }).showToast();
+      }
+    });
+
+    function sendChat() {
+      const txt = document.getElementById('chatInput');
+      if (!txt.value) return;
+      socket.emit('chat_message', { user: username, msg: txt.value });
+      txt.value = '';
+    }
+
+    socket.on('chat_message', d => {
+      const p = document.createElement('div');
+      p.className = d.user === username ? 'msg me' : 'msg';
+      p.textContent = `${d.user}: ${d.msg}`;
+      document.getElementById('chatPanel').appendChild(p);
+    });
+
+    document.getElementById('prescriptionFile').onchange = e => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const prog = document.getElementById('uploadProgress');
+      const reader = new FileReader();
+
+      reader.onprogress = ev => prog.value = (ev.loaded / ev.total) * 100;
+      reader.onloadend = () => {
+        const preview = document.getElementById('previewPrescription');
+        preview.innerText = `Uploaded: ${file.name}`;
+        socket.emit('prescription_upload', { user: username, file: reader.result });
+        Toastify({ text: "✅ Prescription uploaded!", gravity: "bottom", position: "center" }).showToast();
+        prog.value = 0;
+      };
+      reader.readAsArrayBuffer(file);
+    };
+
+    function downloadPDF() {
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF();
+      doc.text("Health Report", 20, 20);
+      doc.text(`User: ${username}`, 20, 30);
+      doc.text(`BP: ${document.getElementById('bpDisplay').innerText}`, 20, 40);
+      doc.text(`Sugar: ${document.getElementById('sugarDisplay').innerText}`, 20, 50);
+      doc.text(`Pulse: ${document.getElementById('pulseDisplay').innerText}`, 20, 60);
+      doc.save(`Health_Report_${username}.pdf`);
+    }
+
+    function recordVoice() {
+      navigator.mediaDevices.getUserMedia({ audio: true }).then(stream => {
+        const mediaRecorder = new MediaRecorder(stream);
+        let audioChunks = [];
+        mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
+        mediaRecorder.onstop = () => {
+          const audioBlob = new Blob(audioChunks);
+          socket.emit('voice_message', { user: username, blob: audioBlob });
+          Toastify({ text: "🎤 Voice message sent!", gravity: "bottom", position: "center" }).showToast();
+        };
+        mediaRecorder.start();
+        setTimeout(() => mediaRecorder.stop(), 3000); // record 3s
+      });
+    }
+
+    // Dummy i18n switch logic (placeholder)
+    function switchLanguage(langCode) {
+      alert(`Language switched to ${langCode.toUpperCase()} (demo only)`);
+    }
+  </script>
+</body>
+</html>

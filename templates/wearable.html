@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Real-Time Wearable Health Data</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f0f8ff;
+            padding: 30px;
+        }
+        .container {
+            max-width: 600px;
+            margin: auto;
+            background: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0px 0px 10px rgba(0,0,0,0.1);
+        }
+        h2 {
+            text-align: center;
+            color: #2e8b57;
+        }
+        .data-item {
+            margin: 10px 0;
+            font-size: 18px;
+        }
+        .label {
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Real-Time Wearable Monitor</h2>
+
+        <div class="data-item"><span class="label">Heart Rate:</span> <span id="heart_rate"></span> bpm</div>
+        <div class="data-item"><span class="label">Blood Pressure:</span> <span id="blood_pressure"></span></div>
+        <div class="data-item"><span class="label">Steps Today:</span> <span id="steps"></span></div>
+        <div class="data-item"><span class="label">Sleep Duration:</span> <span id="sleep"></span> hours</div>
+        <div class="data-item"><span class="label">Oxygen Level:</span> <span id="oxygen"></span>%</div>
+        <div class="data-item"><span class="label">Temperature:</span> <span id="temperature"></span> °F</div>
+        <div class="data-item"><span class="label">Calories Burned:</span> <span id="calories"></span> kcal</div>
+        <div class="data-item"><span class="label">ECG Status:</span> <span id="ecg"></span></div>
+        <div class="data-item"><span class="label">Stress Level:</span> <span id="stress_level"></span>/10</div>
+    </div>
+
+    <script>
+        function fetchData() {
+            fetch('/api/wearable-data')
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('heart_rate').textContent = data.heart_rate;
+                    document.getElementById('blood_pressure').textContent = data.blood_pressure;
+                    document.getElementById('steps').textContent = data.steps;
+                    document.getElementById('sleep').textContent = data.sleep;
+                    document.getElementById('oxygen').textContent = data.oxygen;
+                    document.getElementById('temperature').textContent = data.temperature;
+                    document.getElementById('calories').textContent = data.calories;
+                    document.getElementById('ecg').textContent = data.ecg;
+                    document.getElementById('stress_level').textContent = data.stress_level;
+                });
+        }
+
+        // Initial fetch + update every 5 seconds
+        fetchData();
+        setInterval(fetchData, 5000);
+    </script>
+</body>
+</html>

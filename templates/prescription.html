@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Prescription History</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background-color: #f2f6fc;
+            margin: 0;
+            padding: 20px;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        h2 {
+            color: #007BFF;
+            text-align: center;
+        }
+
+        .controls {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .controls input {
+            padding: 10px;
+            width: 300px;
+            font-size: 16px;
+        }
+
+        .toggle-theme, .btn {
+            padding: 8px 16px;
+            background-color: #007BFF;
+            border: none;
+            color: white;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+
+        .clock {
+            text-align: center;
+            font-size: 16px;
+            color: #666;
+            margin-bottom: 10px;
+        }
+
+        .prescription-card {
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            padding: 20px;
+            margin: 20px auto;
+            max-width: 700px;
+            transition: all 0.3s;
+        }
+
+        .date {
+            font-weight: bold;
+            color: #444;
+            margin-bottom: 10px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 10px;
+        }
+
+        th, td {
+            padding: 10px;
+            border-bottom: 1px solid #ddd;
+            text-align: left;
+        }
+
+        th {
+            background-color: #e8f0fe;
+        }
+
+        .notes {
+            background: #fff9e6;
+            padding: 10px;
+            border-left: 4px solid #ffc107;
+            margin-top: 10px;
+        }
+
+        .frequency-pill {
+            padding: 5px 10px;
+            border-radius: 20px;
+            color: white;
+            font-size: 12px;
+        }
+
+        .once { background-color: #28a745; }
+        .twice { background-color: #ffc107; }
+        .thrice { background-color: #dc3545; }
+
+        .hidden { display: none; }
+
+        body.dark-mode {
+            background-color: #1e1e2f;
+            color: #fff;
+        }
+
+        body.dark-mode .prescription-card {
+            background-color: #2d2d44;
+        }
+
+        body.dark-mode .notes {
+            background-color: #3a3a5a;
+        }
+
+        #scrollTop {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            background: #007BFF;
+            color: white;
+            padding: 10px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: none;
+            box-shadow: 0 0 10px rgba(0,0,0,0.2);
+        }
+
+        .doctor-hover {
+            position: relative;
+            display: inline-block;
+            cursor: pointer;
+            color: #007BFF;
+        }
+
+        .doctor-hover .hover-box {
+            display: none;
+            position: absolute;
+            top: 25px;
+            left: 0;
+            background: #fff;
+            color: #333;
+            padding: 10px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            white-space: nowrap;
+        }
+
+        .doctor-hover:hover .hover-box {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <h2>🧾 Prescription History</h2>
+    <div class="clock" id="clock"></div>
+
+    <div class="controls">
+        <input type="text" id="search" placeholder="Search by medicine or date...">
+        <button class="toggle-theme" onclick="toggleTheme()">Toggle Theme</button>
+        <button class="btn" onclick="collapseAll()">Collapse All</button>
+        <button class="btn" onclick="expandAll()">Expand All</button>
+        <button class="btn" onclick="exportCSV()">Export CSV</button>
+    </div>
+
+    {% for p in prescriptions %}
+        <div class="prescription-card" data-keywords="{{ p.date }} {% for med in p.medicines %}{{ med.name }} {% endfor %}">
+            <div class="date">📅 Date: {{ p.date }} | 👨‍⚕️ <span class="doctor-hover">Dr. Smith<span class="hover-box">Specialist: Cardiologist<br>Experience: 10 yrs</span></span></div>
+            <div class="details">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Medicine</th>
+                            <th>Dosage</th>
+                            <th>Frequency</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for med in p.medicines %}
+                        <tr>
+                            <td>{{ med.name }}</td>
+                            <td>{{ med.dosage }}</td>
+                            <td>
+                                <span class="frequency-pill {{ med.frequency|lower }}">
+                                    {{ med.frequency }}
+                                </span>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                <div class="notes" data-note="{{ p.notes }}">
+                    <strong>Doctor's Notes:</strong> 
+                    <span class="short-note">{{ p.notes[:50] }}...</span>
+                    <span class="full-note hidden">{{ p.notes }}</span>
+                    <button class="btn" onclick="toggleNote(this)">Read More</button>
+                </div>
+            </div>
+            <button class="btn" onclick="toggleDetails(this)">Hide Details</button>
+            <button class="btn" onclick="downloadPDF(this)">Download PDF</button>
+        </div>
+    {% endfor %}
+
+    <div id="scrollTop" onclick="scrollToTop()">⬆</div>
+
+    <script>
+        function toggleDetails(btn) {
+            const details = btn.parentElement.querySelector('.details');
+            if (details.classList.contains('hidden')) {
+                details.classList.remove('hidden');
+                btn.textContent = 'Hide Details';
+            } else {
+                details.classList.add('hidden');
+                btn.textContent = 'Show Details';
+            }
+        }
+
+        function toggleTheme() {
+            document.body.classList.toggle('dark-mode');
+        }
+
+        function updateClock() {
+            const now = new Date();
+            const timeString = now.toLocaleTimeString();
+            document.getElementById('clock').textContent = `🕒 Live Time: ${timeString}`;
+        }
+
+        setInterval(updateClock, 1000);
+        updateClock();
+
+        document.getElementById('search').addEventListener('input', function() {
+            const value = this.value.toLowerCase();
+            document.querySelectorAll('.prescription-card').forEach(card => {
+                const keywords = card.getAttribute('data-keywords').toLowerCase();
+                card.style.display = keywords.includes(value) ? '' : 'none';
+            });
+        });
+
+        function downloadPDF(btn) {
+            const card = btn.parentElement;
+            const printWindow = window.open('', '', 'height=600,width=800');
+            printWindow.document.write('<html><head><title>Prescription</title></head><body>');
+            printWindow.document.write(card.innerHTML);
+            printWindow.document.write('</body></html>');
+            printWindow.document.close();
+            printWindow.print();
+        }
+
+        function exportCSV() {
+            let data = "Date,Medicine,Dosage,Frequency,Notes\n";
+            document.querySelectorAll('.prescription-card').forEach(card => {
+                const date = card.querySelector('.date').innerText.split(":")[1].trim();
+                const rows = card.querySelectorAll('tbody tr');
+                const note = card.querySelector('.notes').getAttribute('data-note');
+                rows.forEach(row => {
+                    const cells = row.querySelectorAll('td');
+                    data += `"${date}","${cells[0].innerText}","${cells[1].innerText}","${cells[2].innerText}","${note}"\n`;
+                });
+            });
+            const blob = new Blob([data], { type: 'text/csv' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            link.href = url;
+            link.download = "prescriptions.csv";
+            link.click();
+        }
+
+        function toggleNote(btn) {
+            const note = btn.parentElement;
+            note.querySelector('.short-note').classList.toggle('hidden');
+            note.querySelector('.full-note').classList.toggle('hidden');
+            btn.textContent = btn.textContent === "Read More" ? "Read Less" : "Read More";
+        }
+
+        function collapseAll() {
+            document.querySelectorAll('.details').forEach(d => d.classList.add('hidden'));
+        }
+
+        function expandAll() {
+            document.querySelectorAll('.details').forEach(d => d.classList.remove('hidden'));
+        }
+
+        function scrollToTop() {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        window.onscroll = () => {
+            const btn = document.getElementById("scrollTop");
+            btn.style.display = window.scrollY > 300 ? "block" : "none";
+        };
+
+        // Optional: medicine reminders (demo alert)
+        setTimeout(() => {
+            alert("⏰ Reminder: It's time to take your  medication!");
+        }, 5000); // 5 seconds after page load
+    </script>
+</body>
+</html>

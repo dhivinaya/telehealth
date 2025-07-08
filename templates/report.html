@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>📄 Health Report Generator</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f0f2f5;
+      padding: 20px;
+      transition: background 0.3s, color 0.3s;
+    }
+
+    body.dark-mode {
+      background: #1e272e;
+      color: white;
+    }
+
+    h2 {
+      text-align: center;
+      color: #2c3e50;
+    }
+
+    .form-section {
+      background: #fff;
+      padding: 20px;
+      border-radius: 10px;
+      max-width: 800px;
+      margin: auto;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+
+    body.dark-mode .form-section {
+      background: #2f3640;
+      color: white;
+    }
+
+    label {
+      font-weight: bold;
+      margin-top: 10px;
+      display: block;
+    }
+
+    input, textarea {
+      width: 100%;
+      padding: 8px;
+      margin-top: 4px;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+    }
+
+    button {
+      margin-top: 15px;
+      padding: 10px 15px;
+      background: #2ecc71;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background: #27ae60;
+    }
+
+    .report-display {
+      margin-top: 30px;
+    }
+
+    .report-card {
+      background: #ffffff;
+      margin: 10px auto;
+      padding: 15px;
+      border-left: 5px solid #3498db;
+      border-radius: 8px;
+      box-shadow: 0 0 5px rgba(0,0,0,0.08);
+      max-width: 800px;
+    }
+
+    body.dark-mode .report-card {
+      background: #3e4b5b;
+    }
+
+    .actions {
+      text-align: center;
+      margin-top: 20px;
+    }
+
+    .actions button {
+      background: #2980b9;
+      margin: 5px;
+    }
+
+    .actions button:nth-child(2) {
+      background: #e67e22;
+    }
+
+    .actions button:nth-child(3) {
+      background: #e74c3c;
+    }
+
+    .top-controls {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    .top-controls input {
+      width: 300px;
+      padding: 8px;
+    }
+
+    .top-controls button {
+      background: #8e44ad;
+    }
+
+    .top-controls button:hover {
+      background: #732d91;
+    }
+  </style>
+</head>
+<body>
+
+  <h2>📄 Patient Health Report</h2>
+
+  <div class="top-controls">
+    <input type="text" id="searchInput" placeholder="🔍 Search by patient or doctor..." onkeyup="searchReports()">
+    <button onclick="exportCSV()">📤 Export CSV</button>
+    <button onclick="toggleDarkMode()">🌙 Toggle Dark Mode</button>
+  </div>
+
+  <div class="form-section">
+    <label>Patient Name</label>
+    <input type="text" id="patientName" required>
+
+    <label>Doctor Name</label>
+    <input type="text" id="doctorName" required>
+
+    <label>Date</label>
+    <input type="date" id="reportDate">
+
+    <label>Diagnosis</label>
+    <textarea id="diagnosis" rows="2"></textarea>
+
+    <label>Prescription</label>
+    <textarea id="prescription" rows="2"></textarea>
+
+    <label>Additional Notes</label>
+    <textarea id="notes" rows="3"></textarea>
+
+    <button onclick="addReport()">➕ Add to Report</button>
+    <button onclick="startVoiceNote()">🎤 Dictate Notes</button>
+  </div>
+
+  <div class="actions">
+    <button onclick="downloadPDF()">📥 Download All</button>
+    <button onclick="printReport()">🖨️ Print</button>
+    <button onclick="clearReports()">🗑️ Clear All</button>
+  </div>
+
+  <div class="report-display" id="reportDisplay"></div>
+
+  <script>
+    let reports = [];
+
+    // Load from localStorage
+    window.onload = function () {
+      const saved = localStorage.getItem("healthReports");
+      if (saved) {
+        reports = JSON.parse(saved);
+        renderReports();
+      }
+    };
+
+    function addReport() {
+      const patient = document.getElementById("patientName").value.trim();
+      const doctor = document.getElementById("doctorName").value.trim();
+      const date = document.getElementById("reportDate").value;
+      const diagnosis = document.getElementById("diagnosis").value.trim();
+      const prescription = document.getElementById("prescription").value.trim();
+      const notes = document.getElementById("notes").value.trim();
+
+      if (!patient || !doctor || !date) {
+        alert("Please fill out required fields.");
+        return;
+      }
+
+      const report = { patient, doctor, date, diagnosis, prescription, notes };
+      reports.push(report);
+      localStorage.setItem("healthReports", JSON.stringify(reports));
+      renderReports();
+      clearInputs();
+    }
+
+    function renderReports(filteredReports = reports) {
+      const display = document.getElementById("reportDisplay");
+      display.innerHTML = "";
+      filteredReports.forEach((r, i) => {
+        display.innerHTML += `
+          <div class="report-card">
+            <strong>Patient:</strong> ${r.patient}<br>
+            <strong>Doctor:</strong> ${r.doctor}<br>
+            <strong>Date:</strong> ${r.date}<br><br>
+            <strong>Diagnosis:</strong><br>${r.diagnosis}<br><br>
+            <strong>Prescription:</strong><br>${r.prescription}<br><br>
+            <strong>Notes:</strong><br>${r.notes}<br><br>
+            <button onclick="downloadSinglePDF(${i})">⬇️ Download PDF</button>
+          </div>
+        `;
+      });
+    }
+
+    function clearInputs() {
+      document.getElementById("patientName").value = "";
+      document.getElementById("doctorName").value = "";
+      document.getElementById("reportDate").value = "";
+      document.getElementById("diagnosis").value = "";
+      document.getElementById("prescription").value = "";
+      document.getElementById("notes").value = "";
+    }
+
+    function downloadPDF() {
+      window.print();
+    }
+
+    function printReport() {
+      window.print();
+    }
+
+    function clearReports() {
+      if (confirm("Are you sure you want to clear all reports?")) {
+        reports = [];
+        localStorage.removeItem("healthReports");
+        renderReports();
+      }
+    }
+
+    function searchReports() {
+      const keyword = document.getElementById("searchInput").value.toLowerCase();
+      const filtered = reports.filter(r =>
+        r.patient.toLowerCase().includes(keyword) ||
+        r.doctor.toLowerCase().includes(keyword)
+      );
+      renderReports(filtered);
+    }
+
+    function exportCSV() {
+      const csv = ["Patient,Doctor,Date,Diagnosis,Prescription,Notes"];
+      reports.forEach(r => {
+        csv.push(`"${r.patient}","${r.doctor}","${r.date}","${r.diagnosis}","${r.prescription}","${r.notes}"`);
+      });
+      const blob = new Blob([csv.join("\n")], { type: 'text/csv' });
+      const url = URL.createObjectURL(blob);
+
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = "health_reports.csv";
+      a.click();
+    }
+
+    function downloadSinglePDF(index) {
+      const { jsPDF } = window.jspdf;
+      const report = reports[index];
+      const doc = new jsPDF();
+      doc.setFontSize(12);
+      doc.text(`Patient: ${report.patient}`, 10, 10);
+      doc.text(`Doctor: ${report.doctor}`, 10, 20);
+      doc.text(`Date: ${report.date}`, 10, 30);
+      doc.text(`Diagnosis: ${report.diagnosis}`, 10, 40);
+      doc.text(`Prescription: ${report.prescription}`, 10, 60);
+      doc.text(`Notes: ${report.notes}`, 10, 80);
+      doc.save(`${report.patient}_Report.pdf`);
+    }
+
+    function startVoiceNote() {
+      const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+      recognition.lang = 'en-US';
+      recognition.onresult = function (event) {
+        document.getElementById("notes").value = event.results[0][0].transcript;
+      };
+      recognition.start();
+    }
+
+    function toggleDarkMode() {
+      document.body.classList.toggle("dark-mode");
+    }
+  </script>
+</body>
+</html>

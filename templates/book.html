@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Book Appointment</title>
+</head>
+<body>
+    <h2>Book an Appointment</h2>
+    <form method="POST" action="/book">
+        Name: <input type="text" name="name" required><br><br>
+        Email: <input type="email" name="email" required><br><br>
+        Date: <input type="date" name="date" required><br><br>
+        Time: <input type="time" name="time" required><br><br>
+        Doctor: <input type="text" name="doctor" required><br><br>
+        <input type="submit" value="Book Appointment">
+    </form>
+    <br>
+    <a href="/appointments">View Appointments</a> | <a href="/chat">Go to Chat</a>
+</body>
+</html>

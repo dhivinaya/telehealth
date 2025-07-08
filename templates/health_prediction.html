@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Health Condition Prediction</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.3.2/socket.io.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background: #f9f9f9;
+        }
+        .suggestions {
+            list-style-type: none;
+            padding: 0;
+            margin-top: 5px;
+            max-height: 150px;
+            overflow-y: auto;
+        }
+        .suggestions li {
+            padding: 8px;
+            background: #f0f0f0;
+            margin-bottom: 4px;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+        .suggestions li:hover {
+            background: #dcdcdc;
+        }
+        button {
+            margin: 5px 0;
+            padding: 8px 12px;
+            border: none;
+            background: #007BFF;
+            color: white;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        #loading {
+            color: green;
+            margin-top: 10px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+    <h2>Health Condition Prediction</h2>
+
+    <div id="date-time"></div><br>
+
+    <form id="health-form" method="POST">
+        <label for="health_data">Enter your symptoms (e.g., fever, cough):</label><br><br>
+        
+        <input list="symptom-list" type="text" id="health_data" name="health_data" required autocomplete="off" style="width: 300px; padding: 8px;">
+        
+        <datalist id="symptom-list">
+            <option value="fever">
+            <option value="cough">
+            <option value="headache">
+            <option value="fatigue">
+            <option value="nausea">
+            <option value="sore throat">
+            <option value="shortness of breath">
+            <option value="chest pain">
+            <option value="vomiting">
+            <option value="diarrhea">
+        </datalist>
+
+        <br><br>
+        <button type="submit">Predict Health Condition</button>
+        <button type="button" onclick="clearInput()">Clear</button>
+        <button type="button" onclick="startVoiceRecognition()">🎤 Speak Symptoms</button>
+    </form>
+
+    <div id="loading" style="display:none;">Predicting...</div>
+
+    <h3>Predicted Health Condition:</h3>
+    <p id="prediction-result">{{ prediction }}</p>
+    <p id="confidence-score"></p>
+
+    <h4>Suggestions:</h4>
+    <ul id="suggestions" class="suggestions"></ul>
+
+    <div>
+        <strong>Quick Symptoms:</strong><br>
+        <button onclick="selectSymptom('fever')">Fever</button>
+        <button onclick="selectSymptom('cough')">Cough</button>
+        <button onclick="selectSymptom('headache')">Headache</button>
+        <button onclick="selectSymptom('nausea')">Nausea</button>
+        <button onclick="selectSymptom('fatigue')">Fatigue</button>
+    </div>
+
+    <script>
+        // Initialize SocketIO
+        var socket = io.connect('http://' + document.domain + ':' + location.port);
+
+        // Symptoms List
+        var symptomsList = ["fever", "cough", "headache", "fatigue", "nausea", "sore throat", "shortness of breath", "chest pain", "vomiting", "diarrhea"];
+
+        // Real-time prediction on form submit
+        document.getElementById("health-form").addEventListener("submit", function (e) {
+            e.preventDefault();
+            var health_data = document.getElementById("health_data").value;
+            socket.emit('predict_health', { health_data: health_data });
+            document.getElementById("loading").style.display = 'block';
+        });
+
+        socket.on('prediction_response', function (data) {
+            document.getElementById('prediction-result').innerText = "Prediction: " + data.prediction;
+            document.getElementById('confidence-score').innerText = "Confidence: " + (data.confidence || "90") + "%";
+            document.getElementById("loading").style.display = 'none';
+
+            // Save to localStorage
+            localStorage.setItem("lastPrediction", data.prediction);
+        });
+
+        // Load last prediction
+        window.onload = function() {
+            var last = localStorage.getItem("lastPrediction");
+            if (last) {
+                document.getElementById('prediction-result').innerText = "Last Prediction: " + last;
+            }
+        };
+
+        // Auto-suggestions
+        document.getElementById("health_data").addEventListener("input", function () {
+            var query = this.value.toLowerCase();
+            var filteredSymptoms = symptomsList.filter(function(symptom) {
+                return symptom.includes(query);
+            }).slice(0, 5); // Limit 5 suggestions
+
+            var suggestions = document.getElementById("suggestions");
+            suggestions.innerHTML = '';
+
+            filteredSymptoms.forEach(function(symptom) {
+                var li = document.createElement("li");
+                li.innerHTML = symptom.replace(new RegExp(query, 'gi'), (match) => `<strong>${match}</strong>`);
+                li.onclick = function() {
+                    document.getElementById("health_data").value = symptom;
+                    suggestions.innerHTML = '';
+                };
+                suggestions.appendChild(li);
+            });
+        });
+
+        // Clear input
+        function clearInput() {
+            document.getElementById("health_data").value = "";
+            document.getElementById("suggestions").innerHTML = '';
+            document.getElementById("prediction-result").innerText = "";
+            document.getElementById("confidence-score").innerText = "";
+        }
+
+        // Voice Recognition
+        function startVoiceRecognition() {
+            var recognition = new webkitSpeechRecognition();
+            recognition.lang = "en-US";
+            recognition.start();
+            recognition.onresult = function(event) {
+                document.getElementById("health_data").value = event.results[0][0].transcript;
+            };
+        }
+
+        // Quick Symptoms Select
+        function selectSymptom(symptom) {
+            document.getElementById("health_data").value = symptom;
+            document.getElementById("suggestions").innerHTML = '';
+        }
+
+        // Show current date and time
+        setInterval(function() {
+            var now = new Date();
+            document.getElementById("date-time").innerText = now.toLocaleString();
+        }, 1000);
+    </script>
+
+</body>
+</html>

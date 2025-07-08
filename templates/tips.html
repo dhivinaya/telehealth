@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Health Tips & Wellness</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #f3f9f9;
+      margin: 20px;
+      color: #333;
+    }
+    h2 {
+      text-align: center;
+      color: #008080;
+    }
+    .quote {
+      background: #e0f7fa;
+      padding: 15px;
+      border-radius: 10px;
+      font-style: italic;
+      margin-bottom: 20px;
+      text-align: center;
+    }
+    .tip-box {
+      background: #fff;
+      margin: 15px auto;
+      padding: 15px;
+      border-radius: 10px;
+      max-width: 600px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+    .tip-actions {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 10px;
+    }
+    button, input[type="submit"] {
+      background: #008080;
+      color: #fff;
+      border: none;
+      padding: 5px 10px;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    .challenge, .goal-setting, .game-zone {
+      background: #e6ffe6;
+      padding: 15px;
+      margin: 20px auto;
+      max-width: 600px;
+      border-radius: 10px;
+    }
+    .comment-box {
+      margin-top: 10px;
+    }
+    .comment-box textarea {
+      width: 100%;
+      padding: 8px;
+      border-radius: 5px;
+    }
+  </style>
+</head>
+<body>
+
+  <h2>💡 Health Tips & Wellness</h2>
+
+  <!-- Daily Quote -->
+  <div class="quote">
+    🌟 Tip of the Day: "{{ quote }}"
+  </div>
+
+  <!-- Health Tips List -->
+  {% for tip in tips %}
+    <div class="tip-box">
+      <strong>💬 {{ tip }}</strong>
+
+      <div class="tip-actions">
+        <button onclick="readTip('{{ tip }}')">🔊 Listen</button>
+        <button onclick="likeTip('{{ loop.index0 }}')">❤️ Like</button>
+        <a href="https://wa.me/?text={{ tip }}" target="_blank">📤 Share</a>
+      </div>
+
+      <!-- Comment Section -->
+      <div class="comment-box">
+        <form action="/comment/{{ loop.index0 }}" method="POST">
+          <textarea name="comment" placeholder="Add a comment..." required></textarea>
+          <input type="submit" value="Post">
+        </form>
+      </div>
+    </div>
+  {% endfor %}
+
+  <!-- Weekly Challenge -->
+  <div class="challenge">
+    <h3>🏆 Weekly Health Challenge</h3>
+    <p>Drink 8 glasses of water daily for 7 days!</p>
+  </div>
+
+  <!-- Goal Setting Feature -->
+  <div class="goal-setting">
+    <h3>🎯 Set Your Health Goal</h3>
+    <form action="/set_goal" method="POST">
+      <input type="text" name="goal" placeholder="e.g., Lose 2kg in a month" required>
+      <input type="submit" value="Set Goal">
+    </form>
+  </div>
+
+  <!-- Mini Health Game -->
+  <div class="game-zone">
+    <h3>🧠 Quick Health Quiz</h3>
+    <p><strong>What’s the ideal amount of daily water intake?</strong></p>
+    <form onsubmit="return checkAnswer(event)">
+      <input type="radio" name="quiz" value="2L"> 2L<br>
+      <input type="radio" name="quiz" value="4L"> 4L<br>
+      <input type="radio" name="quiz" value="6L"> 6L<br><br>
+      <input type="submit" value="Submit">
+    </form>
+    <p id="quiz-result"></p>
+  </div>
+
+  <!-- Reminders (Frontend only for now) -->
+  <div class="goal-setting">
+    <h3>⏰ Daily Reminder</h3>
+    <p>Enable notifications to get your daily tip reminder!</p>
+    <button onclick="setReminder()">Enable Reminder</button>
+  </div>
+
+  <script>
+    function readTip(tip) {
+      const msg = new SpeechSynthesisUtterance(tip);
+      window.speechSynthesis.speak(msg);
+    }
+
+    function likeTip(index) {
+      alert("❤️ Tip " + (index + 1) + " liked!");
+      // Optionally send POST to /like_tip with index
+    }
+
+    function checkAnswer(e) {
+      e.preventDefault();
+      const answer = document.querySelector('input[name="quiz"]:checked');
+      if (answer) {
+        document.getElementById('quiz-result').innerText = 
+          answer.value === "2L" ? "✅ Correct!" : "❌ Try again!";
+      }
+    }
+
+    function setReminder() {
+      Notification.requestPermission().then(perm => {
+        if (perm === "granted") {
+          new Notification("💡 Don’t forget your health tip today!");
+        }
+      });
+    }
+  </script>
+</body>
+</html>

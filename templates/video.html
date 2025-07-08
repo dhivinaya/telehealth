@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Video Call Pro</title>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      font-family: 'Poppins', sans-serif;
+      color: white;
+      height: 100%;
+      overflow: hidden;
+    }
+
+    #videos {
+      position: relative;
+      width: 100%;
+      height: 100%;
+    }
+
+    video {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    #localVideo {
+      z-index: 1;
+      transform: scaleX(-1);
+      opacity: 0.9;
+    }
+
+    #remoteVideo {
+      z-index: 0;
+    }
+
+    .controls {
+      position: absolute;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      z-index: 2;
+    }
+
+    button {
+      background: rgba(255, 255, 255, 0.1);
+      color: #fff;
+      border: 1px solid #444;
+      padding: 10px 15px;
+      border-radius: 30px;
+      cursor: pointer;
+      font-size: 14px;
+      transition: all 0.3s ease;
+    }
+
+    button:hover {
+      background: rgba(255, 255, 255, 0.3);
+    }
+
+    #status, #timer {
+      position: absolute;
+      top: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0, 0, 0, 0.6);
+      padding: 6px 16px;
+      border-radius: 20px;
+      font-size: 14px;
+      z-index: 2;
+      margin: 5px 0;
+    }
+
+    #timer {
+      top: 40px;
+    }
+  </style>
+</head>
+<body>
+
+<div id="status">🔴 Not Connected</div>
+<div id="timer">⏱ Duration: 00:00</div>
+
+<div id="videos">
+  <video id="remoteVideo" autoplay playsinline></video>
+  <video id="localVideo" autoplay muted playsinline></video>
+</div>
+
+<div class="controls">
+  <button id="startCall">Start Call</button>
+  <button id="endCall">End Call</button>
+  <button id="muteMic">Mute Mic</button>
+  <button id="toggleCam">Toggle Camera</button>
+  <button id="flipCamera">Flip Camera</button>
+</div>
+
+<script>
+let localStream;
+let remoteStream;
+let peerConnection;
+let facingMode = "user";
+let timer;
+let minutes = 0, seconds = 0;
+
+const servers = {
+  iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
+};
+
+const localVideo = document.getElementById('localVideo');
+const remoteVideo = document.getElementById('remoteVideo');
+const statusDiv = document.getElementById('status');
+const timerDiv = document.getElementById('timer');
+
+function startTimer() {
+  timer = setInterval(() => {
+    seconds++;
+    if (seconds === 60) {
+      seconds = 0;
+      minutes++;
+    }
+    timerDiv.textContent = `⏱ Duration: ${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+  }, 1000);
+}
+
+function stopTimer() {
+  clearInterval(timer);
+  minutes = 0;
+  seconds = 0;
+  timerDiv.textContent = "⏱ Duration: 00:00";
+}
+
+document.getElementById('startCall').onclick = async () => {
+  localStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode }, audio: true });
+  localVideo.srcObject = localStream;
+
+  peerConnection = new RTCPeerConnection(servers);
+  localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
+
+  peerConnection.ontrack = event => {
+    [remoteStream] = event.streams;
+    remoteVideo.srcObject = remoteStream;
+  };
+
+  statusDiv.innerHTML = "🟢 Connected";
+  startTimer();
+};
+
+document.getElementById('endCall').onclick = () => {
+  if (peerConnection) peerConnection.close();
+  if (localStream) localStream.getTracks().forEach(track => track.stop());
+  stopTimer();
+  localVideo.srcObject = null;
+  remoteVideo.srcObject = null;
+  statusDiv.innerHTML = "🔴 Not Connected";
+};
+
+document.getElementById('muteMic').onclick = () => {
+  if (localStream) {
+    const mic = localStream.getAudioTracks()[0];
+    mic.enabled = !mic.enabled;
+  }
+};
+
+document.getElementById('toggleCam').onclick = () => {
+  if (localStream) {
+    const cam = localStream.getVideoTracks()[0];
+    cam.enabled = !cam.enabled;
+  }
+};
+
+document.getElementById('flipCamera').onclick = async () => {
+  if (localStream) {
+    localStream.getTracks().forEach(track => track.stop());
+  }
+  facingMode = (facingMode === "user") ? "environment" : "user";
+  localStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode }, audio: true });
+  localVideo.srcObject = localStream;
+  localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
+};
+</script>
+
+</body>
+</html>
