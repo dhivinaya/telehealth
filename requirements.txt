@@ -1,4 +1,8 @@
-flask
-flask-socketio
+Flask
+Flask-SocketIO
 eventlet
 flask-cors
+Flask-MySQLdb
+mysql-connector-python
+numpy
+scikit-learn
