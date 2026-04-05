@@ -259,5 +259,8 @@ def on_join(data):
     print(f"{data['sender']} joined room {room}")
 
 # Run the app
-if __name__ == '__main__':
-    socketio.run(app, debug=True)
+
+
+if __name__ == "__main__":
+    port = int(os.environ.get("PORT", 10000))
+    socketio.run(app, host="0.0.0.0", port=port)
